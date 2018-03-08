@@ -2,26 +2,19 @@ package config
 
 import (
 	"sync"
-
-	c "github.com/tendermint/tendermint/rpc/client"
-	tlog "github.com/tendermint/tmlibs/log"
 )
 
 var (
 	once     sync.Once
 	instance *appConfig
-	log      tlog.Logger
 )
 
 type appConfig struct {
-	PubKey []byte
-	PriKey []byte
-	client *c.HTTP
-
 	Debug         bool   `mapstructure:"debug"`
 	HomePath      string `mapstructure:"home"`
-	Addr          string `mapstructure:"addr"`
+	TcpAddr       string `mapstructure:"tcp_addr"`
+	UdpAddr       string `mapstructure:"udp_addr"`
+	HttpAddr      string `mapstructure:"http_addr"`
+	WebSocketAddr string `mapstructure:"ws_addr"`
 	LogLevel      string `mapstructure:"log_level"`
-	Abci          string `mapstructure:"abci"`
-	PrivValidator string `mapstructure:"priv_validator"`
 }

@@ -2,12 +2,11 @@ package config
 
 import (
 	"os"
+	"path"
 
 	"github.com/spf13/viper"
 
-	c "github.com/tendermint/tendermint/rpc/client"
-	tmflags "github.com/tendermint/tmlibs/cli/flags"
-	tlog "github.com/tendermint/tmlibs/log"
+	log "github.com/sirupsen/logrus"
 )
 
 func (t *appConfig) InitConfig() {
@@ -27,19 +26,34 @@ func (t *appConfig) InitConfig() {
 	}
 }
 
-func Abci() *c.HTTP {
+func GetLogWithFields(keyvals log.Fields) *log.Entry {
 	cfg := GetCfg()()
-	return c.NewHTTP(cfg.Abci, "/ws")
-}
 
-func GetLogWithKeyVals(keyvals ...interface{}) tlog.Logger {
-	cfg := GetCfg()()
-	klog, _ := tmflags.ParseLogLevel(
-		cfg.LogLevel,
-		tlog.NewTMLogger(tlog.NewSyncWriter(os.Stderr)),
-		"info",
-	)
-	return klog.With(keyvals...)
+	log.Info()
+
+	// set log output
+	if cfg.Debug {
+		log.SetOutput(os.Stdout)
+		log.SetFormatter(&log.TextFormatter{})
+	} else {
+
+		if file, err := os.OpenFile(path.Join(cfg.HomePath, "app.log"), os.O_CREATE|os.O_WRONLY, 0666); err != nil {
+			panic(err.Error())
+		} else {
+			log.SetFormatter(&log.JSONFormatter{})
+			log.SetOutput(file)
+		}
+	}
+
+	// set log level
+	if l, err := log.ParseLevel(cfg.LogLevel); err != nil {
+		panic(err.Error())
+	} else {
+		log.SetLevel(l)
+	}
+
+	// set log fields
+	return log.WithFields(keyvals)
 }
 
 func GetCfg() func() *appConfig {
@@ -47,9 +61,10 @@ func GetCfg() func() *appConfig {
 		once.Do(func() {
 			instance = &appConfig{
 				HomePath:      "./kdata",
-				Addr:          ":9000",
-				Abci:          "tcp://0.0.0.0:46657",
-				PrivValidator: "./kdata/priv_validator.json",
+				TcpAddr:       ":46380",
+				UdpAddr:       ":46381",
+				HttpAddr:      ":46382",
+				WebSocketAddr: ":46383",
 				Debug:         true,
 				LogLevel:      "info",
 			}
