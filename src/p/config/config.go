@@ -29,8 +29,6 @@ func (t *appConfig) InitConfig() {
 func GetLogWithFields(keyvals log.Fields) *log.Entry {
 	cfg := GetCfg()()
 
-	log.Info()
-
 	// set log output
 	if cfg.Debug {
 		log.SetOutput(os.Stdout)

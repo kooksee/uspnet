@@ -1,22 +1,37 @@
 package app
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
 )
 
 func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	fmt.Fprint(w, "Welcome!\n")
+
+	if d, err := ioutil.ReadAll(r.Body); err != nil {
+		fmt.Fprint(w, string(err.Error()))
+		return
+	} else {
+		addrData := bytes.Split(d, []byte(msg_split))
+		if len(addrData) != 2 {
+			fmt.Fprint(w, "数据解析错误")
+			return
+		}
+
+		if c, ok := clients[string(addrData[0])]; ok {
+			c.Write(addrData[1])
+		} else {
+			fmt.Fprint(w, "address不正确")
+		}
+
+		fmt.Fprint(w, "ok")
+		return
+	}
 }
 
-func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
-}
-
-func initUrls(r *httprouter.Router) {
-	r.GET("/", Index)
-	r.GET("/hello/:name", Hello)
-
+func Pong(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+	fmt.Fprintf(w, "pong")
 }

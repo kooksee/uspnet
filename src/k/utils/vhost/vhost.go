@@ -18,7 +18,8 @@ import (
 	"sync"
 	"time"
 
-	"k/utils/log"
+	log "github.com/sirupsen/logrus"
+
 	frpNet "k/utils/net"
 )
 
@@ -76,7 +77,7 @@ func (v *VhostMuxer) Listen(cfg *VhostRouteConfig) (l *Listener, err error) {
 		passWord:    cfg.Password,
 		mux:         v,
 		accept:      make(chan frpNet.Conn),
-		Logger:      log.NewPrefixLogger(""),
+		Logger:      log.StandardLogger(),
 	}
 	v.registryRouter.Add(cfg.Domain, cfg.Location, l)
 	return l, nil
@@ -173,7 +174,7 @@ type Listener struct {
 	passWord    string
 	mux         *VhostMuxer // for closing VhostMuxer
 	accept      chan frpNet.Conn
-	log.Logger
+	*log.Logger
 }
 
 func (l *Listener) Accept() (frpNet.Conn, error) {
@@ -195,9 +196,6 @@ func (l *Listener) Accept() (frpNet.Conn, error) {
 		conn = sConn
 	}
 
-	for _, prefix := range l.GetAllPrefix() {
-		conn.AddLogPrefix(prefix)
-	}
 	return conn, nil
 }
 

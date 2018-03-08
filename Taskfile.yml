@@ -18,7 +18,7 @@ build:
 dev:
   desc: 编译应用
   cmds:
-    - ./main --home test/d node
+    - ./main s
 
 build_linux:
   desc: 交叉编译成linux应用

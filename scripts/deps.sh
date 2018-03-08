@@ -34,7 +34,10 @@ golang.org/x/net
 #golang
 golang.org/x/crypto
 golang.org/x/text
-s
+
+
+#压缩
+github.com/golang/snappy
 
 #json
 github.com/json-iterator/go

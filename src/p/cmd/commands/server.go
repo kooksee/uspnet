@@ -1,6 +1,10 @@
 package commands
 
-import "github.com/spf13/cobra"
+import (
+	"p/app"
+
+	"github.com/spf13/cobra"
+)
 
 func serverArgs(cmd *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&cfg().TcpAddr, "tadr", cfg().TcpAddr, "tcp addr")
@@ -14,8 +18,14 @@ func serverArgs(cmd *cobra.Command) *cobra.Command {
 func ServerCommand() *cobra.Command {
 	return serverArgs(&cobra.Command{
 		Use:   "s",
-		Short: "run universe node",
+		Short: "run s",
 		RunE: func(cmd *cobra.Command, args []string) error {
+
+			if err := app.Run(); err != nil {
+				panic(err.Error())
+			}
+
+			select {}
 			return nil
 		},
 	})

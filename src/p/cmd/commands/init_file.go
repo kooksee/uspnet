@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// ServerCommand
+// InitFileCommand
 func InitFileCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",

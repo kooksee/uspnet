@@ -3,7 +3,7 @@ package commands
 import "github.com/spf13/cobra"
 
 func clientArgs(cmd *cobra.Command) *cobra.Command {
-	cmd.Flags().StringVar(&cfg().KcpAddr, "kaddr", cfg().KcpAddr, "kcp addr")
+	cmd.Flags().StringVar(&cfg().TcpAddr, "kaddr", cfg().TcpAddr, "kcp addr")
 	return cmd
 }
 
