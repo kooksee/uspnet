@@ -49,7 +49,6 @@ func TcpHandleListener(l *knet.TcpListener) {
 				case "account":
 					if len(cData) != 2 {
 						conn.Write([]byte("数据解析错误"))
-						continue
 					} else {
 						tcpClients[string(cData[1])] = conn
 						conn.Write([]byte("ok"))
@@ -62,7 +61,7 @@ func TcpHandleListener(l *knet.TcpListener) {
 						if c, ok := tcpClients[string(cData[1])]; ok {
 							c.Write([]byte(cData[2]))
 						} else {
-							c.Write([]byte("address不正确"))
+							conn.Write([]byte("数据解析错误"))
 						}
 					}
 
@@ -73,7 +72,7 @@ func TcpHandleListener(l *knet.TcpListener) {
 						if c, ok := wsClients[string(cData[1])]; ok {
 							c.WriteMessage(websocket.TextMessage, []byte(cData[2]))
 						} else {
-							c.WriteMessage(websocket.TextMessage, []byte("address不正确"))
+							conn.Write([]byte("address不正确"))
 						}
 					}
 
@@ -84,6 +83,9 @@ func TcpHandleListener(l *knet.TcpListener) {
 }
 
 func UdpHandleListener(l *knet.UdpListener) {
+
+	var message string
+
 	log.Info("Listen for incoming connections from client")
 	for {
 		c, err := l.Accept()
@@ -98,21 +100,36 @@ func UdpHandleListener(l *knet.UdpListener) {
 			conn.SetReadDeadline(time.Time{})
 			reader := bufio.NewReader(conn)
 			for {
-				if message, err := reader.ReadString('\n'); err == nil {
-					log.Info(message)
-					cData := strings.Split(strings.Trim(message, "\n"), msg_split)
-					if len(cData) != 2 {
-						conn.Write([]byte("数据解析错误"))
-						continue
-					}
 
-					if cData[0] == "account" {
-						tcpClients[cData[1]] = conn
-						conn.Write([]byte("ok"))
-					}
-
-				} else {
+				message, err := reader.ReadString('\n')
+				if err != nil {
 					break
+				}
+				log.Info(message)
+				cData := strings.Split(strings.Trim(message, "\n"), msg_split)
+
+				switch cData[0] {
+				case "tcp":
+					if len(cData) != 3 {
+						conn.Write([]byte("数据解析错误"))
+					} else {
+						if c, ok := tcpClients[string(cData[1])]; ok {
+							c.Write([]byte(cData[2]))
+						} else {
+							conn.Write([]byte("address不正确"))
+						}
+					}
+
+				case "ws":
+					if len(cData) != 3 {
+						conn.Write([]byte("数据解析错误"))
+					} else {
+						if c, ok := wsClients[string(cData[1])]; ok {
+							c.WriteMessage(websocket.TextMessage, []byte(cData[2]))
+						} else {
+							conn.Write([]byte("address不正确"))
+						}
+					}
 				}
 			}
 		}(c)
@@ -147,7 +164,6 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			case "account":
 				if len(cData) != 2 {
 					conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
-					continue
 				} else {
 					wsClients[string(cData[1])] = conn
 					conn.WriteMessage(websocket.TextMessage, []byte("ok"))
@@ -160,19 +176,18 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 					if c, ok := tcpClients[string(cData[1])]; ok {
 						c.Write(cData[2])
 					} else {
-						c.Write([]byte("address不正确"))
+						conn.WriteMessage(websocket.TextMessage, []byte("address不正确"))
 					}
 				}
 
 			case "ws":
 				if len(cData) != 3 {
 					conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
-					continue
 				} else {
 					if c, ok := wsClients[string(cData[1])]; ok {
 						c.WriteMessage(websocket.TextMessage, cData[2])
 					} else {
-						c.WriteMessage(websocket.TextMessage, []byte("address不正确"))
+						conn.WriteMessage(websocket.TextMessage, []byte("address不正确"))
 					}
 				}
 			}

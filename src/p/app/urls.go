@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -15,18 +16,37 @@ func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		fmt.Fprint(w, string(err.Error()))
 		return
 	} else {
-		addrData := bytes.Split(d, []byte(msg_split))
-		if len(addrData) != 2 {
-			fmt.Fprint(w, "数据解析错误")
-			return
+		cData := bytes.Split(d, []byte(msg_split))
+
+		switch string(cData[0]) {
+		case "tcp":
+			if len(cData) != 3 {
+				fmt.Fprint(w, "数据解析错误")
+			} else {
+				if c, ok := tcpClients[string(cData[1])]; ok {
+					c.Write([]byte(cData[2]))
+					return
+				} else {
+					fmt.Fprint(w, "address不正确")
+					return
+				}
+			}
+
+		case "ws":
+			if len(cData) != 3 {
+				fmt.Fprint(w, "数据解析错误")
+			} else {
+				if c, ok := wsClients[string(cData[1])]; ok {
+					c.WriteMessage(websocket.TextMessage, []byte(cData[2]))
+					return
+				} else {
+					fmt.Fprint(w, "address不正确")
+					return
+				}
+			}
 		}
 
-		if c, ok := clients[string(addrData[0])]; ok {
-			c.Write(addrData[1])
-			fmt.Fprint(w, "ok")
-		} else {
-			fmt.Fprint(w, "address不正确")
-		}
+		fmt.Fprint(w, "ok")
 		return
 	}
 }
