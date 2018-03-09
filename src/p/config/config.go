@@ -65,6 +65,7 @@ func GetCfg() func() *appConfig {
 				WebSocketAddr: ":46383",
 				Debug:         true,
 				LogLevel:      "info",
+				Token:         "12345",
 			}
 		})
 		return instance

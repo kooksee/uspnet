@@ -20,7 +20,7 @@ func main() {
 		Short: "超级代理",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) (err error) {
 
-			if _, err := os.Stat(cfg.HomePath); os.IsExist(err) {
+			if _, err = os.Stat(cfg.HomePath); err == nil {
 				// 初始化配置文件
 				cfg.InitConfig()
 			}

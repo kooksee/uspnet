@@ -23,7 +23,7 @@ var (
 		WriteBufferSize:   4096,
 		EnableCompression: true,
 		CheckOrigin: func(r *http.Request) bool {
-			return false
+			return true
 		},
 	}
 )

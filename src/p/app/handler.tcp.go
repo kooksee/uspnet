@@ -20,7 +20,7 @@ func TcpHandleListener(l *knet.TcpListener) {
 			log.Warn("Listener for incoming connections from client closed")
 			return
 		}
-		log.Info("tcp client conneted", c.RemoteAddr().String())
+		log.Info("tcp client conneted ", c.RemoteAddr().String())
 
 		// Start a new goroutine for dealing connections.
 		go func(conn knet.Conn) {

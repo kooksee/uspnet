@@ -36,7 +36,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			if len(p) == 0 {
 				continue
 			}
-
+			log.Info(string(p))
 			cData := bytes.Split(p, []byte(msg_split))
 
 			if len(cData) != 3 {
@@ -47,6 +47,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			switch string(cData[0]) {
 			case "account":
 				if string(cData[2]) != cfg().Token {
+					log.Error(cfg().Token)
+					log.Error(string(cData[2]))
 					conn.WriteMessage(websocket.TextMessage, []byte("认证失败"))
 				} else {
 					wsClients[string(cData[1])] = conn
