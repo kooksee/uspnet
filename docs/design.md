@@ -8,7 +8,8 @@
 ```
 account[@@]客户端名称或者ID[@@]srelay的密码
 
-example: account[@@]123456[@@]不会告诉你的密码
+example:
+account[@@]123456[@@]不会告诉你的密码
 ```
 
 ### 向客户端发送消息

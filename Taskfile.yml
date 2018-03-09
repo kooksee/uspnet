@@ -38,9 +38,9 @@ docker_push:
       - docker push registry.yuanbenlian.com/yuanben/srelay
 
 docker_test:
-  desc: kchain docker test
+  desc: srelay docker test
   cmds:
     - ls * | grep example_data || mkdir example_data
-    - docker run --rm -it -v `pwd`/example_data:/kdata -p 46656:46656 -p 46657:46657 kchain init
-    - docker run --rm -it -v `pwd`/example_data:/kdata -p 46656:46656 -p 46657:46657 kchain
+    - docker run --rm -it -v `pwd`/example_data:/kdata -p 46380:46380 -p 46381:46381 -p 46382:46382 -p 46383:46383 srelay init
+    - docker run --rm -it -v `pwd`/example_data:/kdata -p 46380:46380 -p 46381:46381 -p 46382:46382 -p 46383:46383 srelay
     - rm -rf example_data

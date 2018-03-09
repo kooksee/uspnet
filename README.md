@@ -18,13 +18,15 @@ go get -u -v github.com/go-task/task/cmd/task
 
 ```shell
 task deps
+
+其他依赖请把依赖添加到scripts/deps.sh中
 ```
 
-    其他依赖请把依赖添加到`scripts/deps.sh中`
+
 
 ### Goland作为开发工具配置
 
-    请把当前目录`pwd`配置为`Project GOPATH`
+    请把当前项目根目录设置为`Project GOPATH`
 
 ## 编译
 
@@ -38,3 +40,6 @@ task dev
 ```
 
 
+## docs
+
+[协议设计](./docs/design.md)
