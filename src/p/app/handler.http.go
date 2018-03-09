@@ -16,29 +16,27 @@ func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		fmt.Fprint(w, string(err.Error()))
 	} else {
 		cData := bytes.Split(d, []byte(msg_split))
+
+		if len(cData) != 3 {
+			fmt.Fprint(w, "数据解析错误")
+			return
+		}
+
 		switch string(cData[0]) {
 		case "tcp":
-			if len(cData) != 3 {
-				fmt.Fprint(w, "数据解析错误")
+			if c, ok := tcpClients[string(cData[1])]; ok {
+				c.Write(cData[2])
+				fmt.Fprint(w, "ok")
 			} else {
-				if c, ok := tcpClients[string(cData[1])]; ok {
-					c.Write([]byte(cData[2]))
-					fmt.Fprint(w, "ok")
-				} else {
-					fmt.Fprint(w, "address不正确")
-				}
+				fmt.Fprint(w, "address不正确")
 			}
 
 		case "ws":
-			if len(cData) != 3 {
-				fmt.Fprint(w, "数据解析错误")
+			if c, ok := wsClients[string(cData[1])]; ok {
+				c.WriteMessage(websocket.TextMessage, cData[2])
+				fmt.Fprint(w, "ok")
 			} else {
-				if c, ok := wsClients[string(cData[1])]; ok {
-					c.WriteMessage(websocket.TextMessage, []byte(cData[2]))
-					fmt.Fprint(w, "ok")
-				} else {
-					fmt.Fprint(w, "address不正确")
-				}
+				fmt.Fprint(w, "address不正确")
 			}
 		}
 	}

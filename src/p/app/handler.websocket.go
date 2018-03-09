@@ -15,6 +15,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Info("tcp client conneted", conn.RemoteAddr().String())
+
 	go func(conn *websocket.Conn) {
 		for {
 			messageType, p, err := conn.ReadMessage()
@@ -37,37 +39,34 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 			cData := bytes.Split(p, []byte(msg_split))
 
+			if len(cData) != 3 {
+				conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
+				continue
+			}
+
 			switch string(cData[0]) {
 			case "account":
-				if len(cData) != 2 {
-					conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
+				if string(cData[2]) != cfg().Token {
+					conn.WriteMessage(websocket.TextMessage, []byte("认证失败"))
 				} else {
 					wsClients[string(cData[1])] = conn
 					conn.WriteMessage(websocket.TextMessage, []byte("ok"))
 				}
 
 			case "tcp":
-				if len(cData) != 3 {
-					conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
+				if c, ok := tcpClients[string(cData[1])]; ok {
+					c.Write(cData[2])
+					conn.WriteMessage(websocket.TextMessage, []byte("ok"))
 				} else {
-					if c, ok := tcpClients[string(cData[1])]; ok {
-						c.Write(cData[2])
-						conn.WriteMessage(websocket.TextMessage, []byte("ok"))
-					} else {
-						conn.WriteMessage(websocket.TextMessage, []byte("address不正确"))
-					}
+					conn.WriteMessage(websocket.TextMessage, []byte("address不正确"))
 				}
 
 			case "ws":
-				if len(cData) != 3 {
-					conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
+				if c, ok := wsClients[string(cData[1])]; ok {
+					c.WriteMessage(websocket.TextMessage, cData[2])
+					conn.WriteMessage(websocket.TextMessage, []byte("ok"))
 				} else {
-					if c, ok := wsClients[string(cData[1])]; ok {
-						c.WriteMessage(websocket.TextMessage, cData[2])
-						conn.WriteMessage(websocket.TextMessage, []byte("ok"))
-					} else {
-						conn.WriteMessage(websocket.TextMessage, []byte("address不正确"))
-					}
+					conn.WriteMessage(websocket.TextMessage, []byte("address不正确"))
 				}
 			}
 		}

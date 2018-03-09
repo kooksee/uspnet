@@ -17,4 +17,5 @@ type appConfig struct {
 	HttpAddr      string `mapstructure:"http_addr"`
 	WebSocketAddr string `mapstructure:"ws_addr"`
 	LogLevel      string `mapstructure:"log_level"`
+	Token         string `mapstructure:"token"`
 }

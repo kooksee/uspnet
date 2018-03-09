@@ -5,3 +5,4 @@ udpaddr: :46381
 httpaddr: :46382
 websocketaddr: :46383
 loglevel: info
+token: 123456
