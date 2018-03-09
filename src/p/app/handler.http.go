@@ -10,7 +10,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	if d, err := ioutil.ReadAll(r.Body); err != nil {
 		fmt.Fprint(w, string(err.Error()))
@@ -45,6 +45,6 @@ func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	return
 }
 
-func Pong(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+func pong(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
 	fmt.Fprintf(w, "ok")
 }
