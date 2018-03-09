@@ -43,6 +43,10 @@ github.com/golang/snappy
 github.com/json-iterator/go
 github.com/v2pro/plz/reflect2
 
+
+#wensocket
+github.com/googollee/go-socket.io
+
 """
 
 for i in $a; do

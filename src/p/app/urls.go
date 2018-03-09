@@ -23,15 +23,14 @@ func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 		if c, ok := clients[string(addrData[0])]; ok {
 			c.Write(addrData[1])
+			fmt.Fprint(w, "ok")
 		} else {
 			fmt.Fprint(w, "address不正确")
 		}
-
-		fmt.Fprint(w, "ok")
 		return
 	}
 }
 
 func Pong(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-	fmt.Fprintf(w, "pong")
+	fmt.Fprintf(w, "ok")
 }

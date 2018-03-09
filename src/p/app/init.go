@@ -8,12 +8,15 @@ import (
 	klog "github.com/sirupsen/logrus"
 
 	knet "k/utils/net"
+
+	"github.com/gorilla/websocket"
 )
 
 var (
-	clients map[string]knet.Conn
-	cfg     = kcfg.GetCfg()
-	log     *klog.Entry
+	clients   map[string]knet.Conn
+	wsClients map[string]*websocket.Conn
+	cfg       = kcfg.GetCfg()
+	log       *klog.Entry
 )
 
 const (
