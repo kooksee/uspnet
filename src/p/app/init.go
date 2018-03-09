@@ -1,6 +1,7 @@
 package app
 
 import (
+	"net/http"
 	"time"
 
 	kcfg "p/config"
@@ -13,10 +14,18 @@ import (
 )
 
 var (
-	clients   map[string]knet.Conn
-	wsClients map[string]*websocket.Conn
-	cfg       = kcfg.GetCfg()
-	log       *klog.Entry
+	tcpClients map[string]knet.Conn
+	wsClients  map[string]*websocket.Conn
+	cfg        = kcfg.GetCfg()
+	log        *klog.Entry
+	upgrader   = websocket.Upgrader{
+		ReadBufferSize:    4096,
+		WriteBufferSize:   4096,
+		EnableCompression: true,
+		CheckOrigin: func(r *http.Request) bool {
+			return false
+		},
+	}
 )
 
 const (

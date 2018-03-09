@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -43,7 +44,7 @@ func TcpHandleListener(l knet.Listener) {
 					}
 
 					if cData[0] == "account" {
-						clients[cData[1]] = conn
+						tcpClients[cData[1]] = conn
 						conn.Write([]byte("ok"))
 					}
 				} else {
@@ -54,6 +55,43 @@ func TcpHandleListener(l knet.Listener) {
 	}
 }
 
+func handler(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Error(err.Error())
+		return
+	}
+
+	go func(conn *websocket.Conn) {
+		for {
+			messageType, p, err := conn.ReadMessage()
+			if err != nil {
+				if err != io.EOF {
+					log.Error(err.Error())
+				}
+				return
+			}
+
+			if messageType != websocket.TextMessage {
+				conn.WriteMessage(websocket.TextMessage, []byte("数据类型错误"))
+				continue
+			}
+
+			p = bytes.Trim(p, "\n")
+			cData := bytes.Split(p, []byte(msg_split))
+			if len(cData) != 2 {
+				conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
+				continue
+			}
+
+			if string(cData[0]) == "account" {
+				wsClients[string(cData[1])] = conn
+				conn.WriteMessage(websocket.TextMessage, []byte("ok"))
+			}
+		}
+	}(conn)
+}
+
 // Run app run
 func Run() {
 
@@ -61,7 +99,8 @@ func Run() {
 	log.Info("start")
 
 	// init clienst
-	clients = make(map[string]knet.Conn)
+	tcpClients = make(map[string]knet.Conn)
+	wsClients = make(map[string]*websocket.Conn)
 
 	// init tcp
 	if listener, err := knet.ListenTcp(cfg().TcpAddr); err != nil {
@@ -88,48 +127,4 @@ func Run() {
 	}
 	log.Info("websocket listen on", "9001")
 	return
-}
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:    4096,
-	WriteBufferSize:   4096,
-	EnableCompression: true,
-	CheckOrigin: func(r *http.Request) bool {
-		return false
-	},
-}
-
-func handler(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	go func(conn *websocket.Conn) {
-		for {
-			messageType, p, err := conn.ReadMessage()
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			if messageType != websocket.TextMessage {
-				conn.WriteMessage(websocket.TextMessage, []byte("数据类型错误"))
-				continue
-			}
-
-			p = bytes.Trim(p, "\n")
-			cData := bytes.Split(p, []byte(msg_split))
-			if len(cData) != 2 {
-				conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
-				continue
-			}
-
-			if string(cData[0]) == "account" {
-				wsClients[string(cData[1])] = conn
-				conn.WriteMessage(websocket.TextMessage, []byte("ok"))
-			}
-		}
-	}(conn)
 }
