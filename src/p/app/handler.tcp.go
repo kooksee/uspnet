@@ -2,6 +2,7 @@ package app
 
 import (
 	"bufio"
+	"io/ioutil"
 	"time"
 
 	knet "k/utils/net"
@@ -28,9 +29,9 @@ func TcpHandleListener(l *knet.TcpListener) {
 		go func(conn knet.Conn) {
 			conn.SetReadDeadline(time.Now().Add(connReadTimeout))
 			conn.SetReadDeadline(time.Time{})
-			reader := bufio.NewReader(conn)
 			for {
-				message, err = reader.ReadBytes('\n')
+
+				message, err = ioutil.ReadAll(conn)
 				if err != nil {
 					break
 				}
