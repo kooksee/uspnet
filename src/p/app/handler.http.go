@@ -39,9 +39,9 @@ func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 		if c, ok := tcpClients[msg.Account]; ok {
 			c.Write([]byte(msg.Msg))
-			fmt.Fprint(w, kts.ResultOk())
+			fmt.Fprint(w, string(kts.ResultOk()))
 		} else {
-			fmt.Fprint(w, kts.ResultError("address不正确"))
+			fmt.Fprint(w, string(kts.ResultError("address不正确")))
 		}
 
 	case "ws":
@@ -49,14 +49,14 @@ func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 		if c, ok := wsClients[msg.Account]; ok {
 			c.WriteMessage(websocket.TextMessage, []byte(msg.Msg))
-			fmt.Fprint(w, kts.ResultOk())
+			fmt.Fprint(w, string(kts.ResultOk()))
 		} else {
-			fmt.Fprint(w, kts.ResultError("address不正确"))
+			fmt.Fprint(w, string(kts.ResultError("address不正确")))
 		}
 	}
 	return
 }
 
 func pong(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-	fmt.Fprint(w, kts.ResultOk())
+	fmt.Fprint(w, string(kts.ResultOk()))
 }

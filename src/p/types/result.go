@@ -5,7 +5,7 @@ import (
 )
 
 type resp struct {
-	Code string `json:"event,omitempty"`
+	Code string `json:"code,omitempty"`
 	Msg  string `json:"msg,omitempty"`
 	Data string `json:"data,omitempty"`
 }
