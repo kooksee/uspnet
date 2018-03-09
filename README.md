@@ -31,3 +31,8 @@ task deps
 ```shell
 task build
 ```
+
+## 运行
+```shell
+task dev
+```
