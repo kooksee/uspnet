@@ -14,10 +14,8 @@ func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	if d, err := ioutil.ReadAll(r.Body); err != nil {
 		fmt.Fprint(w, string(err.Error()))
-		return
 	} else {
 		cData := bytes.Split(d, []byte(msg_split))
-
 		switch string(cData[0]) {
 		case "tcp":
 			if len(cData) != 3 {
@@ -25,10 +23,9 @@ func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			} else {
 				if c, ok := tcpClients[string(cData[1])]; ok {
 					c.Write([]byte(cData[2]))
-					return
+					fmt.Fprint(w, "ok")
 				} else {
 					fmt.Fprint(w, "address不正确")
-					return
 				}
 			}
 
@@ -38,17 +35,14 @@ func Index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			} else {
 				if c, ok := wsClients[string(cData[1])]; ok {
 					c.WriteMessage(websocket.TextMessage, []byte(cData[2]))
-					return
+					fmt.Fprint(w, "ok")
 				} else {
 					fmt.Fprint(w, "address不正确")
-					return
 				}
 			}
 		}
-
-		fmt.Fprint(w, "ok")
-		return
 	}
+	return
 }
 
 func Pong(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {

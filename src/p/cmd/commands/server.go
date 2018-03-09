@@ -20,11 +20,8 @@ func ServerCommand() *cobra.Command {
 		Use:   "s",
 		Short: "run s",
 		RunE: func(cmd *cobra.Command, args []string) error {
-
-			if err := app.Run(); err != nil {
-				panic(err.Error())
-			}
-
+			app.Run()
+			
 			select {}
 			return nil
 		},

@@ -42,8 +42,14 @@ func TcpHandleListener(l *knet.TcpListener) {
 					break
 				}
 
-				log.Info(message)
-				cData := strings.Split(strings.Trim(message, "\n"), msg_split)
+				message = strings.Trim(message, "\n")
+
+				if message == "" {
+					continue
+				}
+
+				cData := strings.Split(message, msg_split)
+				log.Info(cData)
 
 				switch cData[0] {
 				case "account":
@@ -60,6 +66,7 @@ func TcpHandleListener(l *knet.TcpListener) {
 					} else {
 						if c, ok := tcpClients[string(cData[1])]; ok {
 							c.Write([]byte(cData[2]))
+							conn.Write([]byte("ok"))
 						} else {
 							conn.Write([]byte("数据解析错误"))
 						}
@@ -71,6 +78,7 @@ func TcpHandleListener(l *knet.TcpListener) {
 					} else {
 						if c, ok := wsClients[string(cData[1])]; ok {
 							c.WriteMessage(websocket.TextMessage, []byte(cData[2]))
+							conn.Write([]byte("ok"))
 						} else {
 							conn.Write([]byte("address不正确"))
 						}
@@ -85,8 +93,6 @@ func TcpHandleListener(l *knet.TcpListener) {
 func UdpHandleListener(l *knet.UdpListener) {
 
 	var message string
-
-	log.Info("Listen for incoming connections from client")
 	for {
 		c, err := l.Accept()
 		if err != nil {
@@ -101,12 +107,18 @@ func UdpHandleListener(l *knet.UdpListener) {
 			reader := bufio.NewReader(conn)
 			for {
 
-				message, err := reader.ReadString('\n')
+				message, err = reader.ReadString('\n')
 				if err != nil {
 					break
 				}
+
+				message = strings.Trim(message, "\n")
+				if message == "" {
+					continue
+				}
+
+				cData := strings.Split(message, msg_split)
 				log.Info(message)
-				cData := strings.Split(strings.Trim(message, "\n"), msg_split)
 
 				switch cData[0] {
 				case "tcp":
@@ -115,6 +127,7 @@ func UdpHandleListener(l *knet.UdpListener) {
 					} else {
 						if c, ok := tcpClients[string(cData[1])]; ok {
 							c.Write([]byte(cData[2]))
+							conn.Write([]byte("ok"))
 						} else {
 							conn.Write([]byte("address不正确"))
 						}
@@ -126,6 +139,7 @@ func UdpHandleListener(l *knet.UdpListener) {
 					} else {
 						if c, ok := wsClients[string(cData[1])]; ok {
 							c.WriteMessage(websocket.TextMessage, []byte(cData[2]))
+							conn.Write([]byte("ok"))
 						} else {
 							conn.Write([]byte("address不正确"))
 						}
@@ -158,7 +172,12 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			cData := bytes.Split(bytes.Trim(p, "\n"), []byte(msg_split))
+			p = bytes.Trim(p, "\n")
+			if len(p) == 0 {
+				continue
+			}
+
+			cData := bytes.Split(p, []byte(msg_split))
 
 			switch string(cData[0]) {
 			case "account":
@@ -175,6 +194,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 				} else {
 					if c, ok := tcpClients[string(cData[1])]; ok {
 						c.Write(cData[2])
+						conn.WriteMessage(websocket.TextMessage, []byte("ok"))
 					} else {
 						conn.WriteMessage(websocket.TextMessage, []byte("address不正确"))
 					}
@@ -186,6 +206,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 				} else {
 					if c, ok := wsClients[string(cData[1])]; ok {
 						c.WriteMessage(websocket.TextMessage, cData[2])
+						conn.WriteMessage(websocket.TextMessage, []byte("ok"))
 					} else {
 						conn.WriteMessage(websocket.TextMessage, []byte("address不正确"))
 					}
@@ -225,16 +246,13 @@ func Run() {
 	//router.GET("/", knet.HttprouterBasicAuth(Index, "", ""))
 	router.POST("/", Index)
 	router.GET("/ping", Pong)
-	if err := http.ListenAndServe(cfg().HttpAddr, router); err != nil {
-		panic(err.Error())
-	}
 	log.Info("http listen on", cfg().HttpAddr)
+	go http.ListenAndServe(cfg().HttpAddr, router)
 
 	// init websocket
 	http.HandleFunc("/ws", wsHandler)
-	if err := http.ListenAndServe(cfg().WebSocketAddr, nil); err != nil {
-		panic(err.Error())
-	}
 	log.Info("websocket listen on", cfg().WebSocketAddr)
+	go http.ListenAndServe(cfg().WebSocketAddr, nil)
+
 	return
 }
