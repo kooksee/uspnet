@@ -1,6 +1,10 @@
 package commands
 
-import "github.com/spf13/cobra"
+import (
+	"p/tclient"
+
+	"github.com/spf13/cobra"
+)
 
 func clientArgs(cmd *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&cfg().TcpAddr, "kaddr", cfg().TcpAddr, "kcp addr")
@@ -12,8 +16,8 @@ func ClientCommand() *cobra.Command {
 		Use:   "c",
 		Short: "run srelay client",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// 初始化配置文件
-			cfg().InitConfig()
+			tclient.Run()
+			select {}
 			return nil
 		},
 	})

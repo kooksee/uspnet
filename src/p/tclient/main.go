@@ -1,38 +1,40 @@
-package main
+package tclient
 
 import (
-	"encoding/json"
-	"fmt"
-	"runtime"
+	"io/ioutil"
+	"time"
+
+	kcfg "p/config"
+
+	klog "github.com/sirupsen/logrus"
+
+	knet "k/utils/net"
 )
 
-func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
+// Run app run
+func Run() {
 
-	c := NewClient("127.0.0.1", "1235")
-	defer c.Close()
+	log = kcfg.GetLogWithFields(klog.Fields{"module": "app"})
+	log.Info("start")
 
-	c.OnConnect(func() {
-		fmt.Println("连接成功")
-		c.Sent("connect")
-	})
+	log.Info("connect tcp")
 
-	c.OnMessage(func(d string) {
-		fmt.Println(c.Conn.LocalAddr().String())
-		fmt.Println(d)
+	if c, err := knet.ConnectTcpServer(cfg().TcpAddr); err != nil {
+		panic(err.Error())
+	} else {
+		go handler(c)
+	}
+}
 
-		m := &Message{}
-		err := json.Unmarshal([]byte(d), m)
+func handler(c knet.Conn) {
+	c.SetReadDeadline(time.Now().Add(connReadTimeout))
+	c.SetReadDeadline(time.Time{})
+
+	for {
+		message, err := ioutil.ReadAll(c)
 		if err != nil {
-			fmt.Println(err)
+			break
 		}
-		fmt.Println(m.Data)
-		fmt.Println(m.Order)
-
-	})
-
-	c.OnDisConnect(func() {
-		fmt.Println("on disconnect")
-	})
-
+		log.Info(string(message))
+	}
 }
