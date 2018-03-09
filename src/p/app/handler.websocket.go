@@ -1,11 +1,13 @@
 package app
 
 import (
-	"bytes"
 	"io"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/json-iterator/go"
+
+	kts "p/types"
 )
 
 func wsHandler(w http.ResponseWriter, r *http.Request) {
@@ -23,52 +25,46 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				if err != io.EOF {
 					log.Error(err.Error())
+					conn.WriteMessage(websocket.TextMessage, kts.ResultError(err.Error()))
 				}
 				return
 			}
 
 			if messageType != websocket.TextMessage {
-				conn.WriteMessage(websocket.TextMessage, []byte("数据类型错误"))
+				conn.WriteMessage(websocket.TextMessage, kts.ResultError("数据类型错误"))
 				continue
 			}
 
-			p = bytes.Trim(p, "\n")
-			if len(p) == 0 {
-				continue
-			}
-			log.Info(string(p))
-			cData := bytes.Split(p, []byte(msg_split))
-
-			if len(cData) != 3 {
-				conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
-				continue
+			// 解析请求数据
+			msg := &kts.KMsg{}
+			if err := jsoniter.Unmarshal(p, msg); err != nil {
+				conn.WriteMessage(websocket.TextMessage, kts.ResultError(err.Error()))
+				return
 			}
 
-			switch string(cData[0]) {
+			switch msg.Event {
 			case "account":
-				if string(cData[2]) != cfg().Token {
-					log.Error(cfg().Token)
-					log.Error(string(cData[2]))
-					conn.WriteMessage(websocket.TextMessage, []byte("认证失败"))
+				if msg.Token != cfg().Token {
+					conn.WriteMessage(websocket.TextMessage, kts.ResultError("认证失败"))
 				} else {
-					wsClients[string(cData[1])] = conn
-					conn.WriteMessage(websocket.TextMessage, []byte("ok"))
+					wsClients[msg.Account] = conn
+					conn.WriteMessage(websocket.TextMessage, kts.ResultOk())
 				}
 
 			case "tcp":
-				if c, ok := tcpClients[string(cData[1])]; ok {
-					c.Write(cData[2])
-					conn.WriteMessage(websocket.TextMessage, []byte("ok"))
+				if c, ok := tcpClients[msg.Account]; ok {
+					c.Write([]byte(msg.Msg))
+					conn.WriteMessage(websocket.TextMessage, kts.ResultOk())
 				} else {
-					conn.WriteMessage(websocket.TextMessage, []byte("address不正确"))
+					conn.WriteMessage(websocket.TextMessage, kts.ResultError("address不正确"))
 				}
 
 			case "ws":
-				if c, ok := wsClients[string(cData[1])]; ok {
-					c.WriteMessage(websocket.TextMessage, cData[2])
-					conn.WriteMessage(websocket.TextMessage, []byte("ok"))
+				if c, ok := wsClients[msg.Account]; ok {
+					c.WriteMessage(websocket.TextMessage, []byte(msg.Msg))
+					conn.WriteMessage(websocket.TextMessage, kts.ResultOk())
 				} else {
-					conn.WriteMessage(websocket.TextMessage, []byte("address不正确"))
+					conn.WriteMessage(websocket.TextMessage, kts.ResultError("address不正确"))
 				}
 			}
 		}

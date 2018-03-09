@@ -30,5 +30,4 @@ var (
 
 const (
 	connReadTimeout time.Duration = 10 * time.Second
-	msg_split                     = "[@@]"
 )

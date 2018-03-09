@@ -1,48 +1,62 @@
 package app
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/json-iterator/go"
 	"github.com/julienschmidt/httprouter"
+
+	kts "p/types"
 )
 
 func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	var (
+		d   []byte
+		err error
+	)
 
-	if d, err := ioutil.ReadAll(r.Body); err != nil {
-		fmt.Fprint(w, string(err.Error()))
-	} else {
-		cData := bytes.Split(d, []byte(msg_split))
+	// 读取请求的内容
+	d, err = ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Fprint(w, string(kts.ResultError(err.Error())))
+		return
+	}
 
-		if len(cData) != 3 {
-			fmt.Fprint(w, "数据解析错误")
-			return
+	// 解析请求数据
+	msg := &kts.KMsg{}
+	if err := jsoniter.Unmarshal(d, msg); err != nil {
+		fmt.Fprint(w, string(kts.ResultError(err.Error())))
+		return
+	}
+
+	switch msg.Event {
+
+	case "tcp":
+		// 发送数据给tcp客户端
+
+		if c, ok := tcpClients[msg.Account]; ok {
+			c.Write([]byte(msg.Msg))
+			fmt.Fprint(w, kts.ResultOk())
+		} else {
+			fmt.Fprint(w, kts.ResultError("address不正确"))
 		}
 
-		switch string(cData[0]) {
-		case "tcp":
-			if c, ok := tcpClients[string(cData[1])]; ok {
-				c.Write(cData[2])
-				fmt.Fprint(w, "ok")
-			} else {
-				fmt.Fprint(w, "address不正确")
-			}
+	case "ws":
+		// 发送数据给ws客户端
 
-		case "ws":
-			if c, ok := wsClients[string(cData[1])]; ok {
-				c.WriteMessage(websocket.TextMessage, cData[2])
-				fmt.Fprint(w, "ok")
-			} else {
-				fmt.Fprint(w, "address不正确")
-			}
+		if c, ok := wsClients[msg.Account]; ok {
+			c.WriteMessage(websocket.TextMessage, []byte(msg.Msg))
+			fmt.Fprint(w, kts.ResultOk())
+		} else {
+			fmt.Fprint(w, kts.ResultError("address不正确"))
 		}
 	}
 	return
 }
 
 func pong(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
-	fmt.Fprintf(w, "ok")
+	fmt.Fprint(w, kts.ResultOk())
 }
