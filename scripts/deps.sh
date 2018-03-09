@@ -2,8 +2,7 @@
 
 a="""
 
-#web
-github.com/julienschmidt/httprouter
+
 
 #config
 github.com/spf13/cobra
@@ -18,11 +17,12 @@ github.com/pelletier/go-toml
 gopkg.in/yaml.v2
 github.com/hashicorp/hcl
 
+#others
+
 github.com/fsnotify/fsnotify
 
 #test
 github.com/stretchr/testify
-
 
 #log
 github.com/sirupsen/logrus
@@ -31,21 +31,22 @@ github.com/sirupsen/logrus
 @github.com/xtaci/kcp-go
 golang.org/x/net
 
+#wensocket
+github.com/gorilla/websocket
+
+#web
+github.com/julienschmidt/httprouter
+
 #golang
 golang.org/x/crypto
 golang.org/x/text
 
-
-#压缩
+#snappy
 github.com/golang/snappy
 
 #json
 github.com/json-iterator/go
 github.com/v2pro/plz/reflect2
-
-
-#wensocket
-github.com/googollee/go-socket.io
 
 """
 

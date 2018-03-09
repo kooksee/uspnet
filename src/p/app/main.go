@@ -19,7 +19,71 @@ import (
 	knet "k/utils/net"
 )
 
-func TcpHandleListener(l knet.Listener) {
+func TcpHandleListener(l *knet.TcpListener) {
+
+	var message string
+
+	log.Info("Listen for incoming connections from client")
+	for {
+		c, err := l.Accept()
+		if err != nil {
+			log.Warn("Listener for incoming connections from client closed")
+			return
+		}
+
+		// Start a new goroutine for dealing connections.
+		go func(conn knet.Conn) {
+			conn.SetReadDeadline(time.Now().Add(connReadTimeout))
+			conn.SetReadDeadline(time.Time{})
+			reader := bufio.NewReader(conn)
+			for {
+				message, err = reader.ReadString('\n');
+				if err != nil {
+					break
+				}
+
+				log.Info(message)
+				cData := strings.Split(strings.Trim(message, "\n"), msg_split)
+
+				switch cData[0] {
+				case "account":
+					if len(cData) != 2 {
+						conn.Write([]byte("数据解析错误"))
+						continue
+					} else {
+						tcpClients[string(cData[1])] = conn
+						conn.Write([]byte("ok"))
+					}
+
+				case "tcp":
+					if len(cData) != 3 {
+						conn.Write([]byte("数据解析错误"))
+					} else {
+						if c, ok := tcpClients[string(cData[1])]; ok {
+							c.Write([]byte(cData[2]))
+						} else {
+							c.Write([]byte("address不正确"))
+						}
+					}
+
+				case "ws":
+					if len(cData) != 3 {
+						conn.Write([]byte("数据解析错误"))
+					} else {
+						if c, ok := wsClients[string(cData[1])]; ok {
+							c.WriteMessage(websocket.TextMessage, []byte(cData[2]))
+						} else {
+							c.WriteMessage(websocket.TextMessage, []byte("address不正确"))
+						}
+					}
+
+				}
+			}
+		}(c)
+	}
+}
+
+func UdpHandleListener(l *knet.UdpListener) {
 	log.Info("Listen for incoming connections from client")
 	for {
 		c, err := l.Accept()
@@ -36,8 +100,7 @@ func TcpHandleListener(l knet.Listener) {
 			for {
 				if message, err := reader.ReadString('\n'); err == nil {
 					log.Info(message)
-					message = strings.Trim(message, "\n")
-					cData := strings.Split(message, msg_split)
+					cData := strings.Split(strings.Trim(message, "\n"), msg_split)
 					if len(cData) != 2 {
 						conn.Write([]byte("数据解析错误"))
 						continue
@@ -47,6 +110,7 @@ func TcpHandleListener(l knet.Listener) {
 						tcpClients[cData[1]] = conn
 						conn.Write([]byte("ok"))
 					}
+
 				} else {
 					break
 				}
@@ -55,7 +119,7 @@ func TcpHandleListener(l knet.Listener) {
 	}
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func wsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Error(err.Error())
@@ -77,16 +141,40 @@ func handler(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			p = bytes.Trim(p, "\n")
-			cData := bytes.Split(p, []byte(msg_split))
-			if len(cData) != 2 {
-				conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
-				continue
-			}
+			cData := bytes.Split(bytes.Trim(p, "\n"), []byte(msg_split))
 
-			if string(cData[0]) == "account" {
-				wsClients[string(cData[1])] = conn
-				conn.WriteMessage(websocket.TextMessage, []byte("ok"))
+			switch string(cData[0]) {
+			case "account":
+				if len(cData) != 2 {
+					conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
+					continue
+				} else {
+					wsClients[string(cData[1])] = conn
+					conn.WriteMessage(websocket.TextMessage, []byte("ok"))
+				}
+
+			case "tcp":
+				if len(cData) != 3 {
+					conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
+				} else {
+					if c, ok := tcpClients[string(cData[1])]; ok {
+						c.Write(cData[2])
+					} else {
+						c.Write([]byte("address不正确"))
+					}
+				}
+
+			case "ws":
+				if len(cData) != 3 {
+					conn.WriteMessage(websocket.TextMessage, []byte("数据解析错误"))
+					continue
+				} else {
+					if c, ok := wsClients[string(cData[1])]; ok {
+						c.WriteMessage(websocket.TextMessage, cData[2])
+					} else {
+						c.WriteMessage(websocket.TextMessage, []byte("address不正确"))
+					}
+				}
 			}
 		}
 	}(conn)
@@ -104,27 +192,34 @@ func Run() {
 
 	// init tcp
 	if listener, err := knet.ListenTcp(cfg().TcpAddr); err != nil {
-		panic(fmt.Sprintf("Create server listener error, %v", err))
+		panic(fmt.Sprintf("Create server listener error, %v", err.Error()))
 	} else {
 		go TcpHandleListener(listener)
 	}
 	log.Info("tcp listen on", cfg().TcpAddr)
+
+	if l, err := knet.ListenUDP(cfg().UdpAddr); err != nil {
+		panic(fmt.Sprintf("Create server listener error, %v", err.Error()))
+	} else {
+		go UdpHandleListener(l)
+	}
+	log.Info("udp listen on", cfg().UdpAddr)
 
 	// init http
 	router := httprouter.New()
 	//router.GET("/", knet.HttprouterBasicAuth(Index, "", ""))
 	router.POST("/", Index)
 	router.GET("/ping", Pong)
-	if err := http.ListenAndServe(":9000", router); err != nil {
+	if err := http.ListenAndServe(cfg().HttpAddr, router); err != nil {
 		panic(err.Error())
 	}
-	log.Info("http listen on", "9000")
+	log.Info("http listen on", cfg().HttpAddr)
 
 	// init websocket
-	http.HandleFunc("/ws", handler)
-	if err := http.ListenAndServe(":9001", nil); err != nil {
+	http.HandleFunc("/ws", wsHandler)
+	if err := http.ListenAndServe(cfg().WebSocketAddr, nil); err != nil {
 		panic(err.Error())
 	}
-	log.Info("websocket listen on", "9001")
+	log.Info("websocket listen on", cfg().WebSocketAddr)
 	return
 }

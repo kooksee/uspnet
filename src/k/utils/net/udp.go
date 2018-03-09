@@ -168,8 +168,8 @@ type UdpListener struct {
 	*log.Logger
 }
 
-func ListenUDP(bindAddr string, bindPort int64) (l *UdpListener, err error) {
-	udpAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", bindAddr, bindPort))
+func ListenUDP(bindAddr string) (l *UdpListener, err error) {
+	udpAddr, err := net.ResolveUDPAddr("udp", bindAddr)
 	if err != nil {
 		return l, err
 	}
