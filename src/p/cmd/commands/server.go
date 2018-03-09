@@ -18,7 +18,7 @@ func serverArgs(cmd *cobra.Command) *cobra.Command {
 func ServerCommand() *cobra.Command {
 	return serverArgs(&cobra.Command{
 		Use:   "s",
-		Short: "run s",
+		Short: "run srelay server",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			app.Run()
 			

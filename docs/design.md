@@ -6,22 +6,33 @@
 ### 添加客户端到srelay
 
 ```
-account[@@]客户端名称或者ID[@@]srelay的密码
-
-example:
-account[@@]123456[@@]不会告诉你的密码
+{
+	"event":"account",
+	"account":"客户端名称或者ID",
+	"token":"srelay的密码"
+}
+```
+```
+{
+	"event":"account",
+	"account":"123456",
+	"token":"123456"
+}
 ```
 
 ### 向客户端发送消息
 
 ```
-tcp[@@]客户端名称或者ID[@@]需要发送的消息
-ws[@@]客户端名称或者ID[@@]需要发送的消息
-
-tcp: 发送给tcp客户端
-ws: 发送给ws客户端
-
-
-tcp[@@]123456[@@]hello
-ws[@@]123456[@@]ping
+{
+	"event":"ws",
+	"account":"客户端名称或者ID",
+	"msg":"需要发送的消息"
+}
+```
+```
+{
+	"event":"tcp",
+	"account":"客户端名称或者ID",
+	"msg":"需要发送的消息"
+}
 ```

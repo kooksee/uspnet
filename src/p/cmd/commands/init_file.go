@@ -14,7 +14,7 @@ import (
 func InitFileCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
-		Short: "init config",
+		Short: "init srelay config",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			d, _ := yaml.Marshal(cfg())
