@@ -10,6 +10,6 @@ type KMsg struct {
 }
 
 func (t *KMsg) Dumps() []byte {
-	d, _ := jsoniter.Marshal(t)
-	return d
+	d, _ := jsoniter.MarshalToString(t)
+	return []byte(d+"\n")
 }

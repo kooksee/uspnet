@@ -1,7 +1,9 @@
 package app
 
 import (
-	"io/ioutil"
+	"bufio"
+	"bytes"
+	"io"
 	"time"
 
 	knet "k/utils/net"
@@ -22,33 +24,43 @@ func UdpHandleListener(l *knet.UdpListener) {
 			return
 		}
 
-		log.Info("tcp client conneted", c.RemoteAddr().String())
+		log.Info("udp client conneted", c.RemoteAddr().String())
 
 		// Start a new goroutine for dealing connections.
 		go func(conn knet.Conn) {
 			conn.SetReadDeadline(time.Now().Add(connReadTimeout))
 			conn.SetReadDeadline(time.Time{})
+			read := bufio.NewReader(conn)
 			for {
 
-				message, err = ioutil.ReadAll(conn)
+				message, err = read.ReadBytes('\n')
 				if err != nil {
-					break
+					if err.Error() == io.EOF.Error() {
+						break
+					}
+					log.Info("udp error ", err.Error())
+					continue
 				}
+				message = bytes.Trim(message, "\n")
+
+				log.Info("udp msg ", string(message))
 
 				// 解析请求数据
 				msg := &kts.KMsg{}
 				if err := jsoniter.Unmarshal(message, msg); err != nil {
+					log.Error(err.Error())
 					conn.Write(kts.ResultError(err.Error()))
 					return
 				}
 
 				switch msg.Event {
+
 				case "tcp":
 					if c, ok := tcpClients[msg.Account]; ok {
 						c.Write([]byte(msg.Msg))
 						conn.Write(kts.ResultOk())
 					} else {
-						conn.Write(kts.ResultError("address不正确"))
+						conn.Write(kts.ResultError("account不存在"))
 					}
 
 				case "ws":
@@ -56,7 +68,7 @@ func UdpHandleListener(l *knet.UdpListener) {
 						c.WriteMessage(websocket.TextMessage, []byte(msg.Msg))
 						conn.Write(kts.ResultOk())
 					} else {
-						conn.Write(kts.ResultError("address不正确"))
+						conn.Write(kts.ResultError("account不存在"))
 					}
 				}
 			}

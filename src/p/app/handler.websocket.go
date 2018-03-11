@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"io"
 	"net/http"
 
@@ -23,17 +24,19 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		for {
 			messageType, p, err := conn.ReadMessage()
 			if err != nil {
-				if err != io.EOF {
-					log.Error(err.Error())
-					conn.WriteMessage(websocket.TextMessage, kts.ResultError(err.Error()))
+				if err.Error() == io.EOF.Error() {
+					break
 				}
-				return
+				log.Error(err.Error())
+				continue
 			}
 
 			if messageType != websocket.TextMessage {
 				conn.WriteMessage(websocket.TextMessage, kts.ResultError("数据类型错误"))
 				continue
 			}
+
+			p = bytes.Trim(p, "\n")
 
 			// 解析请求数据
 			msg := &kts.KMsg{}
@@ -56,7 +59,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 					c.Write([]byte(msg.Msg))
 					conn.WriteMessage(websocket.TextMessage, kts.ResultOk())
 				} else {
-					conn.WriteMessage(websocket.TextMessage, kts.ResultError("address不正确"))
+					conn.WriteMessage(websocket.TextMessage, kts.ResultError("account不存在"))
 				}
 
 			case "ws":
@@ -64,7 +67,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 					c.WriteMessage(websocket.TextMessage, []byte(msg.Msg))
 					conn.WriteMessage(websocket.TextMessage, kts.ResultOk())
 				} else {
-					conn.WriteMessage(websocket.TextMessage, kts.ResultError("address不正确"))
+					conn.WriteMessage(websocket.TextMessage, kts.ResultError("account不存在"))
 				}
 			}
 		}

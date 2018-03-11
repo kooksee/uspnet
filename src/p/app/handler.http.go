@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -14,20 +15,22 @@ import (
 
 func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var (
-		d   []byte
-		err error
+		message []byte
+		err     error
 	)
 
 	// 读取请求的内容
-	d, err = ioutil.ReadAll(r.Body)
+	message, err = ioutil.ReadAll(r.Body)
 	if err != nil {
 		fmt.Fprint(w, string(kts.ResultError(err.Error())))
 		return
 	}
+	message = bytes.Trim(message, "\n")
+	log.Info("http msg ", string(message))
 
 	// 解析请求数据
 	msg := &kts.KMsg{}
-	if err := jsoniter.Unmarshal(d, msg); err != nil {
+	if err := jsoniter.Unmarshal(message, msg); err != nil {
 		fmt.Fprint(w, string(kts.ResultError(err.Error())))
 		return
 	}
@@ -41,7 +44,7 @@ func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			c.Write([]byte(msg.Msg))
 			fmt.Fprint(w, string(kts.ResultOk()))
 		} else {
-			fmt.Fprint(w, string(kts.ResultError("address不正确")))
+			fmt.Fprint(w, string(kts.ResultError("account不存在")))
 		}
 
 	case "ws":
@@ -51,7 +54,7 @@ func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			c.WriteMessage(websocket.TextMessage, []byte(msg.Msg))
 			fmt.Fprint(w, string(kts.ResultOk()))
 		} else {
-			fmt.Fprint(w, string(kts.ResultError("address不正确")))
+			fmt.Fprint(w, string(kts.ResultError("account不存在")))
 		}
 	}
 	return

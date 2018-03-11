@@ -1,15 +1,17 @@
 package app
 
 import (
-	"io/ioutil"
+	"bufio"
+	"bytes"
+	"io"
 	"time"
 
 	knet "k/utils/net"
 
+	kts "p/types"
+
 	"github.com/gorilla/websocket"
 	"github.com/json-iterator/go"
-
-	kts "p/types"
 )
 
 func TcpHandleListener(l *knet.TcpListener) {
@@ -22,31 +24,42 @@ func TcpHandleListener(l *knet.TcpListener) {
 			log.Error("Listener for incoming connections from client closed")
 			return
 		}
-		log.Info("tcp client conneted ", c.RemoteAddr().String())
+
+		log.Info("tcp client ", c.RemoteAddr().String())
 
 		// Start a new goroutine for dealing connections.
 		go func(conn knet.Conn) {
 			conn.SetReadDeadline(time.Now().Add(connReadTimeout))
 			conn.SetReadDeadline(time.Time{})
+			read := bufio.NewReader(conn)
 			for {
 
-				message, err = ioutil.ReadAll(conn)
+				message, err = read.ReadBytes('\n')
 				if err != nil {
-					break
+					if err.Error() == io.EOF.Error() {
+						break
+					}
+					log.Info("tcp error ", err.Error())
+					continue
 				}
+				message = bytes.Trim(message, "\n")
+
+				log.Info("tcp msg ", string(message))
 
 				// 解析请求数据
 				msg := &kts.KMsg{}
 				if err := jsoniter.Unmarshal(message, msg); err != nil {
 					conn.Write(kts.ResultError(err.Error()))
-					return
+					continue
 				}
 
 				switch msg.Event {
 				case "account":
 					if msg.Token != cfg().Token {
+						log.Error("认证失败")
 						conn.Write(kts.ResultError("认证失败"))
 					} else {
+						log.Info("tcp client conneted ", c.RemoteAddr().String(), " ok")
 						tcpClients[msg.Account] = conn
 						conn.Write(kts.ResultOk())
 					}
@@ -56,7 +69,7 @@ func TcpHandleListener(l *knet.TcpListener) {
 						c.Write([]byte(msg.Msg))
 						conn.Write(kts.ResultOk())
 					} else {
-						conn.Write(kts.ResultError("数据解析错误"))
+						conn.Write(kts.ResultError("account不存在"))
 					}
 
 				case "ws":
@@ -64,10 +77,14 @@ func TcpHandleListener(l *knet.TcpListener) {
 						c.WriteMessage(websocket.TextMessage, []byte(msg.Msg))
 						conn.Write(kts.ResultOk())
 					} else {
-						conn.Write(kts.ResultError("address不正确"))
+						conn.Write(kts.ResultError("account不存在"))
 					}
 				}
 			}
 		}(c)
 	}
 }
+
+// {"event":"account","account":"123456","token":"123456"}
+// {"event":"ws","account":"123456","msg":"hello"}
+// {"event":"tcp","account":"123456","msg":"hello"}

@@ -12,16 +12,16 @@ type resp struct {
 
 func ResultOk() []byte {
 
-	d, _ := jsoniter.Marshal(resp{
+	d, _ := jsoniter.MarshalToString(resp{
 		Code: "ok",
 	})
-	return d
+	return []byte(d + "\n")
 }
 
 func ResultError(msg string) []byte {
-	d, _ := jsoniter.Marshal(resp{
+	d, _ := jsoniter.MarshalToString(resp{
 		Code: "error",
 		Msg:  msg,
 	})
-	return d
+	return []byte(d + "\n")
 }
