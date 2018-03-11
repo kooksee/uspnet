@@ -41,7 +41,7 @@ func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		// 发送数据给tcp客户端
 
 		if c, ok := tcpClients[msg.Account]; ok {
-			c.Write([]byte(msg.Msg))
+			c.Write([]byte(msg.Msg+"\n"))
 			fmt.Fprint(w, string(kts.ResultOk()))
 		} else {
 			fmt.Fprint(w, string(kts.ResultError("account不存在")))
@@ -51,7 +51,7 @@ func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		// 发送数据给ws客户端
 
 		if c, ok := wsClients[msg.Account]; ok {
-			c.WriteMessage(websocket.TextMessage, []byte(msg.Msg))
+			c.WriteMessage(websocket.TextMessage, []byte(msg.Msg+"\n"))
 			fmt.Fprint(w, string(kts.ResultOk()))
 		} else {
 			fmt.Fprint(w, string(kts.ResultError("account不存在")))

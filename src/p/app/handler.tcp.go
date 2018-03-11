@@ -3,7 +3,6 @@ package app
 import (
 	"bufio"
 	"bytes"
-	"io"
 	"time"
 
 	knet "k/utils/net"
@@ -36,11 +35,8 @@ func TcpHandleListener(l *knet.TcpListener) {
 
 				message, err = read.ReadBytes('\n')
 				if err != nil {
-					if err.Error() == io.EOF.Error() {
-						break
-					}
 					log.Info("tcp error ", err.Error())
-					continue
+					break
 				}
 				message = bytes.Trim(message, "\n")
 
@@ -66,7 +62,7 @@ func TcpHandleListener(l *knet.TcpListener) {
 
 				case "tcp":
 					if c, ok := tcpClients[msg.Account]; ok {
-						c.Write([]byte(msg.Msg))
+						c.Write([]byte(msg.Msg+"\n"))
 						conn.Write(kts.ResultOk())
 					} else {
 						conn.Write(kts.ResultError("account不存在"))
@@ -74,7 +70,7 @@ func TcpHandleListener(l *knet.TcpListener) {
 
 				case "ws":
 					if c, ok := wsClients[msg.Account]; ok {
-						c.WriteMessage(websocket.TextMessage, []byte(msg.Msg))
+						c.WriteMessage(websocket.TextMessage, []byte(msg.Msg+"\n"))
 						conn.Write(kts.ResultOk())
 					} else {
 						conn.Write(kts.ResultError("account不存在"))

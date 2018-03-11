@@ -2,7 +2,6 @@ package app
 
 import (
 	"bytes"
-	"io"
 	"net/http"
 
 	"github.com/gorilla/websocket"
@@ -24,11 +23,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		for {
 			messageType, p, err := conn.ReadMessage()
 			if err != nil {
-				if err.Error() == io.EOF.Error() {
-					break
-				}
 				log.Error(err.Error())
-				continue
+				break
 			}
 
 			if messageType != websocket.TextMessage {
@@ -56,7 +52,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 			case "tcp":
 				if c, ok := tcpClients[msg.Account]; ok {
-					c.Write([]byte(msg.Msg))
+					c.Write([]byte(msg.Msg+"\n"))
 					conn.WriteMessage(websocket.TextMessage, kts.ResultOk())
 				} else {
 					conn.WriteMessage(websocket.TextMessage, kts.ResultError("account不存在"))
@@ -64,7 +60,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 
 			case "ws":
 				if c, ok := wsClients[msg.Account]; ok {
-					c.WriteMessage(websocket.TextMessage, []byte(msg.Msg))
+					c.WriteMessage(websocket.TextMessage, []byte(msg.Msg+"\n"))
 					conn.WriteMessage(websocket.TextMessage, kts.ResultOk())
 				} else {
 					conn.WriteMessage(websocket.TextMessage, kts.ResultError("account不存在"))

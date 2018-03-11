@@ -3,7 +3,6 @@ package app
 import (
 	"bufio"
 	"bytes"
-	"io"
 	"time"
 
 	knet "k/utils/net"
@@ -35,11 +34,8 @@ func UdpHandleListener(l *knet.UdpListener) {
 
 				message, err = read.ReadBytes('\n')
 				if err != nil {
-					if err.Error() == io.EOF.Error() {
-						break
-					}
 					log.Info("udp error ", err.Error())
-					continue
+					break
 				}
 				message = bytes.Trim(message, "\n")
 
@@ -57,7 +53,7 @@ func UdpHandleListener(l *knet.UdpListener) {
 
 				case "tcp":
 					if c, ok := tcpClients[msg.Account]; ok {
-						c.Write([]byte(msg.Msg))
+						c.Write([]byte(msg.Msg+"\n"))
 						conn.Write(kts.ResultOk())
 					} else {
 						conn.Write(kts.ResultError("account不存在"))
@@ -65,7 +61,7 @@ func UdpHandleListener(l *knet.UdpListener) {
 
 				case "ws":
 					if c, ok := wsClients[msg.Account]; ok {
-						c.WriteMessage(websocket.TextMessage, []byte(msg.Msg))
+						c.WriteMessage(websocket.TextMessage, []byte(msg.Msg+"\n"))
 						conn.Write(kts.ResultOk())
 					} else {
 						conn.Write(kts.ResultError("account不存在"))
