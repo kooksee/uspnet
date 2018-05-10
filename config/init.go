@@ -11,6 +11,7 @@ var (
 
 type Config struct {
 	Version       uint32
+	Salt          string
 	Time          int64
 	Name          string `mapstructure:"name" yaml:"name"`
 	Config        string `mapstructure:"config" yaml:"config"`

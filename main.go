@@ -9,11 +9,20 @@ import (
 	"os/signal"
 	"syscall"
 	"fmt"
+	"encoding/json"
+
+	"github.com/ontio/ontology-eventbus/log"
+)
+
+var (
+	logger = log.New(log.DebugLevel, "[MAIN]")
 )
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	runtime.GC()
+
+	logger.SetLevel(log.DebugLevel)
 
 	cfg := config.GetCfg()
 	cfg.InitConfig()
@@ -23,6 +32,9 @@ func main() {
 	flag.IntVar(&cfg.BindPort, "port", cfg.BindPort, "app port")
 	flag.StringVar(&cfg.LogLevel, "level", cfg.LogLevel, "log level")
 	flag.Parse()
+
+	d, _ := json.Marshal(cfg)
+	logger.Info(string(d))
 
 	n := node.NewNoder(cfg)
 	if err := n.Start(); err != nil {
